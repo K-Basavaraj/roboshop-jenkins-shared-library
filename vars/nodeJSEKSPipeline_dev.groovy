@@ -25,12 +25,16 @@ def call(Map configMap){
             component = configMap.get("component")
             // CI always builds DEV image
             // Higher environments (qa/prod) are handled by CD
-            environment = ''
+            targetEnv  = 'dev'
         }
         stages{
             stage('Read The Version') {
                 steps {
                     script {
+                        // Resolve the correct AWS account ID for this environment
+                        env.account_id = pipelineGlobals.getAccountID(env.targetEnv)
+                        echo "Using AWS Account ID: ${env.account_id} for environment: ${env.targetEnv}"
+
                         // Read the version from package.json
                         // Store it in a Jenkins environment variable (env.appVersion) so it is available globally
                         // across all stages (Docker build, Deploy, etc.), not just inside this script block
@@ -42,31 +46,33 @@ def call(Map configMap){
             }
 
             stage('install dependencies'){
-                steps {
+                dir("${component}") {
                     sh 'npm install'
                 }
             }
 
             stage('Docker Build'){
                 steps {
-                    withAWS(region: 'us-east-1', credentials: "aws-creds-${environment}"){
-                        script {
-                            // Docker image tag (build-once strategy)
-                            def repo = "${account_id}.dkr.ecr.${region}.amazonaws.com/${project}/${environment}/${component}:${env.appVersion}"
-                            sh """
-                                echo "Logging into ECR..."
-                                aws ecr get-login-password --region ${region} | docker login --username AWS --password-stdin ${account_id}.dkr.ecr.${region}.amazonaws.com
+                    withAWS(region: 'us-east-1', credentials: "aws-creds-${env.targetEnv}"){
+                        dir("${component}") {
+                            script {
+                                // Docker image tag (build-once strategy)
+                                def repo = "${env.account_id}.dkr.ecr.${region}.amazonaws.com/${project}/${env.targetEnv}/${component}:${env.appVersion}"
+                                sh """
+                                    echo "Logging into ECR..."
+                                    aws ecr get-login-password --region ${region} | docker login --username AWS --password-stdin ${account_id}.dkr.ecr.${region}.amazonaws.com
 
-                                echo "Building Docker image: ${repo}"
-                                docker build -t ${repo} .
+                                    echo "Building Docker image: ${repo}"
+                                    docker build -t ${repo} .
 
-                                docker images
+                                    docker images
 
-                                echo "Pushing image to ECR..."
-                                docker push ${repo}
+                                    echo "Pushing image to ECR..."
+                                    docker push ${repo}
 
-                                echo "Docker image successfully pushed to ${repo}"
-                            """
+                                    echo "Docker image successfully pushed to ${repo}"
+                                """
+                            }
                         }
                     }
                 }
@@ -88,7 +94,7 @@ def call(Map configMap){
                     */
                     build job: "../${component}-cd", parameters: [
                     string(name: 'version', value: "${env.appVersion}"),
-                    string(name: 'ENVIRONMENT', value: ${environment}),
+                    string(name: 'ENVIRONMENT', value: "${env.targetEnv}"),
                     ], wait: true   
                 }
             }
