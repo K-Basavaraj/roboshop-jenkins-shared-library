@@ -20,7 +20,7 @@ def call(Map configMap){
         environment {
             appVersion = '' // this will become global, we can use across pipeline
             region = 'us-east-1'
-            account_id = '688567303455'
+            account_id = ''
             project = configMap.get("project")
             component = configMap.get("component")
             // CI always builds DEV image
@@ -46,8 +46,10 @@ def call(Map configMap){
             }
 
             stage('install dependencies'){
-                dir("${component}") {
-                    sh 'npm install'
+                steps { 
+                    dir("${component}") {
+                        sh 'npm install'
+                    }
                 }
             }
 
@@ -60,7 +62,7 @@ def call(Map configMap){
                                 def repo = "${env.account_id}.dkr.ecr.${region}.amazonaws.com/${project}/${env.targetEnv}/${component}:${env.appVersion}"
                                 sh """
                                     echo "Logging into ECR..."
-                                    aws ecr get-login-password --region ${region} | docker login --username AWS --password-stdin ${account_id}.dkr.ecr.${region}.amazonaws.com
+                                    aws ecr get-login-password --region ${region} | docker login --username AWS --password-stdin ${env.account_id}.dkr.ecr.${region}.amazonaws.com
 
                                     echo "Building Docker image: ${repo}"
                                     docker build -t ${repo} .
