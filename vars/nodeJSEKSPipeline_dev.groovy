@@ -29,18 +29,34 @@ def call(Map configMap){
         }
         stages{
             stage('Read The Version') {
+                // steps {
+                //     script {
+                //         // Resolve the correct AWS account ID for this environment
+                //         env.account_id = pipelineGlobals.getAccountID(env.targetEnv)
+                //         echo "Using AWS Account ID: ${env.account_id} for environment: ${env.targetEnv}"
+
+                //         // Read the version from package.json
+                //         // Store it in a Jenkins environment variable (env.appVersion) so it is available globally
+                //         // across all stages (Docker build, Deploy, etc.), not just inside this script block
+                //         def packageJson = readJSON file: "${component}/package.json"
+                //         env.appVersion = packageJson.version
+                //         echo "App version: ${env.appVersion}"
+                //     }
+                // }
                 steps {
                     script {
-                        // Resolve the correct AWS account ID for this environment
-                        env.account_id = pipelineGlobals.getAccountID(env.targetEnv)
-                        echo "Using AWS Account ID: ${env.account_id} for environment: ${env.targetEnv}"
+                        def accountId = pipelineGlobals.getAccountID(env.targetEnv)
+                        echo "Local Account ID = ${accountId}"
 
-                        // Read the version from package.json
-                        // Store it in a Jenkins environment variable (env.appVersion) so it is available globally
-                        // across all stages (Docker build, Deploy, etc.), not just inside this script block
                         def packageJson = readJSON file: "${component}/package.json"
+                        echo "Package JSON = ${packageJson}"
+                        echo "Package Version = ${packageJson.version}"
+
+                        env.account_id = accountId
                         env.appVersion = packageJson.version
-                        echo "App version: ${env.appVersion}"
+
+                        echo "ENV Account ID = ${env.account_id}"
+                        echo "ENV App Version = ${env.appVersion}"
                     }
                 }
             }
