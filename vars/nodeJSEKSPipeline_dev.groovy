@@ -39,7 +39,8 @@ def call(Map configMap){
                         // Read the version from package.json
                         // Store it in a Jenkins environment variable (env.appVersion) so it is available globally
                         // across all stages (Docker build, Deploy, etc.), not just inside this script block
-                        def packageJson = readJSON file: "${component}/package.json"
+                        // def packageJson = readJSON file: "${component}/package.json" //if its monorepo with microservice
+                        def packageJson = readJSON file: "package.json"
                         env.appVersion = packageJson.version
                         echo "App version: ${env.appVersion}"
                     }
@@ -62,36 +63,36 @@ def call(Map configMap){
                 // }
             }
 
-            stage('install dependencies'){
+            stage('Install Dependencies'){
                 steps { 
-                    dir("${component}") {
-                        sh 'npm install'
-                    }
+                    // dir("${component}") {   //if its monorepo with microservice
+                    //     sh 'npm install'
+                    // }
+                    sh 'npm install'
                 }
             }
 
             stage('Docker Build'){
                 steps {
                     withAWS(region: 'us-east-1', credentials: "aws-creds-${env.targetEnv}"){
-                        dir("${component}") {
-                            script {
-                                // Docker image tag (build-once strategy)
-                                def repo = "${env.account_id}.dkr.ecr.${region}.amazonaws.com/${project}/${env.targetEnv}/${component}:${env.appVersion}"
-                                sh """
-                                    echo "Logging into ECR..."
-                                    aws ecr get-login-password --region ${region} | docker login --username AWS --password-stdin ${env.account_id}.dkr.ecr.${region}.amazonaws.com
+                        // dir("${component}") {} //if its monorepo with microservice
+                        script {
+                            // Docker image tag (build-once strategy)
+                            def repo = "${env.account_id}.dkr.ecr.${region}.amazonaws.com/${project}/${env.targetEnv}/${component}:${env.appVersion}"
+                            sh """
+                                echo "Logging into ECR..."
+                                aws ecr get-login-password --region ${region} | docker login --username AWS --password-stdin ${env.account_id}.dkr.ecr.${region}.amazonaws.com
 
-                                    echo "Building Docker image: ${repo}"
-                                    docker build -t ${repo} .
+                                echo "Building Docker image: ${repo}"
+                                docker build -t ${repo} .
 
-                                    docker images
+                                docker images
 
-                                    echo "Pushing image to ECR..."
-                                    docker push ${repo}
+                                echo "Pushing image to ECR..."
+                                docker push ${repo}
 
-                                    echo "Docker image successfully pushed to ${repo}"
-                                """
-                            }
+                                echo "Docker image successfully pushed to ${repo}"
+                            """
                         }
                     }
                 }
