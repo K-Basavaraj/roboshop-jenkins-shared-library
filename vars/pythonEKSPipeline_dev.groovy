@@ -80,7 +80,10 @@ def call(Map configMap){
                                 aws ecr get-login-password --region ${region} | docker login --username AWS --password-stdin ${env.account_id}.dkr.ecr.${region}.amazonaws.com
 
                                 echo "Building Docker image: ${repo}"
-                                docker build -t ${repo} .
+                                # docker build -t ${repo} .
+                                docker build --no-cache -t ${repo} .
+
+                                
 
                                 docker images
 
