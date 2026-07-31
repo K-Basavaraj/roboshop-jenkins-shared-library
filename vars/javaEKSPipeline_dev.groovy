@@ -18,9 +18,9 @@ def call(Map configMap){
             booleanParam(name: 'deploy', defaultValue: false, description: 'Select to deploy or not')
         }
         environment {
-            appVersion = '' // this will become global, we can use across pipeline
+            // appVersion = '' // this will become global, we can use across pipeline
+            // account_id = ''
             region = 'us-east-1'
-            account_id = ''
             project = configMap.get("project")
             component = configMap.get("component")
             // CI always builds DEV image
@@ -105,6 +105,19 @@ def call(Map configMap){
             }
             
         }
-            
+        post {
+            always {
+                echo "This section runs always."
+                deleteDir()
+            }
+
+            success {
+                echo "Pipeline completed successfully."
+            }
+
+            failure {
+                echo "Pipeline failed."
+            }
+        }   
     }
 }

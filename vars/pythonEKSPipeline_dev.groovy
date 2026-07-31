@@ -114,8 +114,20 @@ def call(Map configMap){
                     ], wait: true   
                 }
             }
-            
         }
-            
+        post {
+            always {
+                echo "This section runs always."
+                deleteDir()
+            }
+
+            success {
+                echo "Pipeline completed successfully."
+            }
+
+            failure {
+                echo "Pipeline failed."
+            }
+        } 
     }
 }

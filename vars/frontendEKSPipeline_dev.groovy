@@ -45,31 +45,6 @@ def call(Map configMap){
                         echo "App version: ${env.appVersion}"
                     }
                 }
-                // steps {
-                //     script {
-                //         def accountId = pipelineGlobals.getAccountID(env.targetEnv)
-                //         echo "Local Account ID = ${accountId}"
-
-                //         def packageJson = readJSON file: "${component}/package.json"
-                //         echo "Package JSON = ${packageJson}"
-                //         echo "Package Version = ${packageJson.version}"
-
-                //         env.account_id = accountId
-                //         env.appVersion = packageJson.version
-
-                //         echo "ENV Account ID = ${env.account_id}"
-                //         echo "ENV App Version = ${env.appVersion}"
-                //     }
-                // }
-            }
-
-            stage('Install Dependencies'){
-                steps { 
-                    // dir("${component}") {   //if its monorepo with microservice
-                    //     sh 'npm install'
-                    // }
-                    sh 'npm install'
-                }
             }
 
             stage('Docker Build'){
@@ -118,7 +93,6 @@ def call(Map configMap){
                     ], wait: true   
                 }
             }
-            
         }
         post {
             always {
