@@ -118,7 +118,7 @@ def call(Map configMap){
         post {
             always {
                 echo "This section runs always."
-                deleteDir()
+                // deleteDir()
             }
 
             success {
